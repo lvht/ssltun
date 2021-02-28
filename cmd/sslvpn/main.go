@@ -7,17 +7,19 @@ import (
 	"io"
 	"log"
 	"net"
+	"os"
 	"os/exec"
 
 	"github.com/songgao/water"
 )
 
-var name, key, local string
+var name, key, local, up string
 
 func init() {
 	flag.StringVar(&name, "name", "", "server domain name")
 	flag.StringVar(&key, "key", "", "server auth key")
 	flag.StringVar(&local, "local", "", "local network cidr")
+	flag.StringVar(&up, "up", "", "up script path")
 }
 
 func main() {
@@ -74,6 +76,21 @@ func main() {
 	if err = exec.Command("/usr/sbin/ip", args...).Run(); err != nil {
 		log.Println("addr add faild", err)
 		return
+	}
+
+	if up != "" {
+		cmd := exec.Command(up)
+		cmd.Env = []string{
+			"TUN_NAME=" + tun.Name(),
+			"TUN_IP=" + clientIP,
+			"PEER_IP=" + hostIP,
+		}
+		cmd.Stdin = os.Stdout
+		cmd.Stderr = os.Stderr
+		if err = cmd.Run(); err != nil {
+			log.Println("addr add faild", err)
+			return
+		}
 	}
 
 	go func() {
