@@ -182,13 +182,18 @@ func proxyVPN(w http.ResponseWriter, req *http.Request) (err error) {
 		defer tun.Close()
 		buf := make([]byte, 10240)
 		for {
-			if _, err := io.ReadFull(c, buf[:4]); err != nil {
+			if _, err := io.ReadFull(c, buf[:20]); err != nil {
 				log.Println("read ip length error", err)
 				return
 			}
-			l := int(binary.BigEndian.Uint16(buf[2:4]))
-
-			if _, err = io.ReadFull(c, buf[4:l]); err != nil {
+			v := int(buf[0]) >> 4
+			var l int
+			if v == 4 {
+				l = int(binary.BigEndian.Uint16(buf[2:4]))
+			} else {
+				l = int(binary.BigEndian.Uint16(buf[4:20])) + 20
+			}
+			if _, err = io.ReadFull(c, buf[20:l]); err != nil {
 				log.Println("read ip body error", err)
 				return
 			}
