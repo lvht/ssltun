@@ -12,11 +12,12 @@ import (
 	"github.com/songgao/water"
 )
 
-var name, key string
+var name, key, local string
 
 func init() {
 	flag.StringVar(&name, "name", "", "server domain name")
 	flag.StringVar(&key, "key", "", "server auth key")
+	flag.StringVar(&local, "local", "", "local network cidr")
 }
 
 func main() {
@@ -39,7 +40,10 @@ func main() {
 	})
 
 	auth := base64.StdEncoding.EncodeToString([]byte(key + ":"))
-	req := "CONNECT * HTTP/1.1\r\nProxy-Authorization: Basic " + auth + "\r\n\r\n"
+	req := "CONNECT * HTTP/1.1\r\n" +
+		"Local-Network: " + local + "\r\n" +
+		"Proxy-Authorization: Basic " + auth + "\r\n" +
+		"\r\n"
 	if _, err = c.Write([]byte(req)); err != nil {
 		return
 	}

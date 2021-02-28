@@ -162,6 +162,18 @@ func proxyVPN(w http.ResponseWriter, req *http.Request) (err error) {
 		return
 	}
 
+	if local := req.Header.Get("Local-Network"); local != "" {
+		if _, _, err = net.ParseCIDR(local); err != nil {
+			log.Println("parse local network faild", err)
+			return
+		}
+		args = []string{"route", "add", local, "via", clientIP.String()}
+		if err = exec.Command("/usr/sbin/ip", args...).Run(); err != nil {
+			log.Println("route add faild", err)
+			return
+		}
+	}
+
 	if _, err = c.Write(append(clientIP.To4(), hostIP.To4()...)); err != nil {
 		return
 	}
